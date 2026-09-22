@@ -1,11 +1,11 @@
-//! 星标仓库的「缓存优先 + 条件刷新」逻辑。
+//! 星标仓库的「缓存优先」逻辑：只读快照，手动刷新才访问网络。
 
 use serde::{Deserialize, Serialize};
 
 use crate::api::github::{GithubClient, GithubError};
 use crate::auth::Session;
 use crate::cache::{self, SCHEMA_VERSION};
-use crate::config::{CONFIG, now_secs};
+use crate::config::now_secs;
 use crate::models::Repository;
 
 /// 落盘的 Stars 快照。
@@ -40,17 +40,16 @@ enum FetchOutcome {
 
 const PER_PAGE: u32 = 100;
 
-/// 读取 Stars：命中新鲜缓存直接返回，否则条件刷新，刷新失败时回退旧缓存。
+/// 读取 Stars：有可用快照直接返回，否则（或 `force` 时）访问网络。
+///
+/// 不在后台做任何隐式刷新：只有用户点「刷新」（`force = true`）才会重新拉取。
 pub async fn load(session: &Session, force: bool) -> Result<Vec<Repository>, StarsError> {
     let path = cache::stars_path(&session.user.login);
     let cached: Option<StarsCache> = cache::read_json_async(path.clone()).await;
     let now = now_secs();
 
-    if let Some(cache) = &cached {
-        let fresh = cache.schema_version == SCHEMA_VERSION
-            && !force
-            && now.saturating_sub(cache.fetched_at) < CONFIG.stars_ttl;
-        if fresh {
+    if !force {
+        if let Some(cache) = cached.as_ref().filter(|c| c.schema_version == SCHEMA_VERSION) {
             return Ok(cache.repositories.clone());
         }
     }

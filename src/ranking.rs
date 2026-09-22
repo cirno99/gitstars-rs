@@ -1,4 +1,4 @@
-//! 排行榜的「缓存优先 + 条件刷新」逻辑。
+//! 排行榜的「缓存优先」逻辑：只读快照，手动刷新才访问网络。
 
 use std::collections::HashMap;
 
@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::ranking::{self, Fetched};
 use crate::cache::{self, SCHEMA_VERSION};
-use crate::config::{CONFIG, now_secs};
+use crate::config::now_secs;
 use crate::models::{RankingData, Repository};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,30 +27,26 @@ struct LanguagesCache {
     data: Vec<String>,
 }
 
-/// 命中新鲜缓存时返回其中的数据。
+/// 两个快照都可用（schema 匹配）时返回其数据。
 ///
-/// 抽成独立函数，避免 `if !force { if let ... { if fresh { ... } } }` 三层嵌套。
-fn fresh_cache(
-    force: bool,
+/// 抽成独立函数，避免 `if !force { if let ... { if let ... { ... } } }` 三层嵌套。
+fn usable_cache(
     repos: Option<&RankingReposCache>,
     langs: Option<&LanguagesCache>,
-    now: i64,
 ) -> Option<RankingData> {
-    if force {
+    let (repos, langs) = (repos?, langs?);
+    if repos.schema_version != SCHEMA_VERSION || langs.schema_version != SCHEMA_VERSION {
         return None;
     }
-    let (repos, langs) = (repos?, langs?);
-    let fresh = repos.schema_version == SCHEMA_VERSION
-        && langs.schema_version == SCHEMA_VERSION
-        && now.saturating_sub(repos.fetched_at) < CONFIG.ranking_ttl
-        && now.saturating_sub(langs.fetched_at) < CONFIG.ranking_ttl;
-    fresh.then(|| RankingData {
+    Some(RankingData {
         languages: langs.data.clone(),
         repos: repos.data.clone(),
     })
 }
 
-/// 读取排行榜：命中新鲜缓存直接返回，否则刷新，失败时回退旧缓存。
+/// 读取排行榜：有可用快照直接返回，否则（或 `force` 时）访问网络。
+///
+/// 不在后台做任何隐式刷新：只有用户手动触发（`force = true`）才会重新拉取。
 pub async fn load(force: bool) -> Result<RankingData, String> {
     let repos_path = cache::ranking_repos_path();
     let langs_path = cache::ranking_languages_path();
@@ -58,8 +54,10 @@ pub async fn load(force: bool) -> Result<RankingData, String> {
     let cached_langs: Option<LanguagesCache> = cache::read_json_async(langs_path.clone()).await;
     let now = now_secs();
 
-    if let Some(data) = fresh_cache(force, cached_repos.as_ref(), cached_langs.as_ref(), now) {
-        return Ok(data);
+    if !force {
+        if let Some(data) = usable_cache(cached_repos.as_ref(), cached_langs.as_ref()) {
+            return Ok(data);
+        }
     }
 
     let client = ranking::build_client();

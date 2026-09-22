@@ -106,11 +106,10 @@ data/
 
 刷新策略：
 
-1. 打开时直接读缓存返回；
-2. 超过 TTL（Stars 默认 15 分钟 / 排行榜 24 小时）时触发条件刷新；
-3. 条件刷新带 `If-None-Match`，返回 `304` 则复用旧快照；
-4. 前端「刷新」按钮可强制跳过 TTL 与 ETag 重新拉取；
-5. 刷新失败时回退到旧缓存。
+1. 打开时直接读本地 JSON 快照并立即返回，**永不阻塞**页面加载；
+2. **不做任何自动/后台刷新**：快照会一直复用，直到用户手动触发；
+3. 只有前端「刷新」按钮（`force`）才跳过缓存重新拉取，带 `If-None-Match`，`304` 则复用旧快照；
+4. 仅当本地无可用快照（或强制刷新）时才同步等待网络。
 
 读取使用 `simd-json` 加速大文件反序列化（排行榜快照约 1.4MB），写入使用 `serde_json` 并采用「临时文件 + rename」原子替换。
 
@@ -122,8 +121,6 @@ data/
 | `GITHUB_CLIENT_SECRET` | 是 | — | GitHub OAuth App Client Secret（仅服务端） |
 | `GITSTARS_DATA_DIR` | 否 | `./data` | 缓存目录 |
 | `LEPTOS_SITE_ADDR` | 否 | `127.0.0.1:3000` | 监听地址（Docker 镜像内为 `0.0.0.0:8080`） |
-| `GITSTARS_STARS_TTL_SECS` | 否 | `900` | Stars 缓存 TTL |
-| `GITSTARS_RANKING_TTL_SECS` | 否 | `86400` | 排行榜缓存 TTL |
 | `TLS_CERT_FILE` / `TLS_KEY_FILE` | 否 | — | 同时提供才启用 HTTPS |
 | `GITSTARS_PORT` | 否 | `8080` | **仅 Docker**：映射到宿主机的端口 |
 | `GITSTARS_CERT_DIR` | 否 | `./.certs` | **仅 Docker/脚本**：本地证书目录 |
@@ -291,7 +288,7 @@ cargo clippy --lib --no-default-features --features hydrate \
 - 前端由 Vue3 + Pinia 重写为 Leptos 信号/组件。
 - 原先手写的 Node HTTPS 服务由 Leptos server function + 框架自带宿主替代，无需单独后端工程。
 - Access Token 从浏览器 `localStorage` 迁移到服务端会话 + HttpOnly Cookie。
-- Stars / 排行榜从「浏览器 localStorage 缓存」升级为「服务端 JSON 快照 + TTL + ETag 条件刷新」。
+- Stars / 排行榜从「浏览器 localStorage 缓存」升级为「服务端 JSON 快照 + ETag 条件刷新」，仅在用户手动刷新时访问网络。
 - 新增手动刷新按钮与仓库描述展开。
 
 ## 许可证
