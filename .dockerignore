@@ -1,0 +1,43 @@
+# ============================================================================
+# Docker 构建上下文过滤
+#
+# 构建上下文是仓库根目录，但镜像只需要两样东西：
+#   target/release/gitstars   ← 已编译的服务端二进制（内含图标 sprite 等 include_str! 资源）
+#   target/site/              ← cargo-leptos 产出的前端站点（wasm / js / css / public 资源）
+# 其余全部排除，避免把 target/ 里数 GB 的中间产物送进构建上下文。
+# ============================================================================
+
+# ---- 版本控制与编辑器 ----
+.git
+.gitignore
+.gitattributes
+.github
+.vscode
+.idea
+*.swp
+*~
+
+# ---- 源码与配置：产物已编译，镜像内不需要 ----
+.consult
+src
+style
+public
+assets
+scripts
+data
+.certs
+.env
+.env.example
+Dockerfile
+compose*.yaml
+README.md
+Cargo.toml
+Cargo.lock
+VERSION
+
+# ---- Rust：仅保留最终产物，排除全部中间产物 ----
+target/*
+!target/release/
+target/release/*
+!target/release/gitstars
+!target/site/

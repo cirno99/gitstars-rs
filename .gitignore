@@ -1,0 +1,6 @@
+.consult/
+target/
+data/
+dist/
+.env
+.certs/

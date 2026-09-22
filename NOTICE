@@ -1,0 +1,58 @@
+# 第三方组件与资源声明
+
+本项目**自身编写的代码**按 [MIT](./LICENSE) 发布。下列第三方组件/资源各自遵循其原有许可证，
+版权归各自作者所有，本项目仅按原许可条款使用。
+
+---
+
+## 静态资源
+
+### 图标 sprite — `assets/icons.sprite.svg`
+
+| 图标 | 来源 | 许可证 |
+| --- | --- | --- |
+| `all-application` `close` `hand-left` `loading` `search` `share` `sort-ascend` `sort-descend` `star` `tag` `time` `translate`（`viewBox="0 0 48 48"`，线性描边） | [IconPark](https://github.com/bytedance/IconPark)（字节跳动） | Apache License 2.0 |
+| `branch` `github` `link` `star-fill`（`viewBox="0 0 16 16"`，填充） | [Octicons](https://github.com/primer/octicons)（GitHub, Inc.） | MIT License |
+| `logo` | 本项目自绘（五角星） | 同 [LICENSE](./LICENSE) |
+
+### README 预览样式 — `style/github-markdown.css`
+
+来自 [github-markdown-css](https://github.com/sindresorhus/github-markdown-css)（Sindre Sorhus），
+MIT License。原文件未保留版权声明，此处补充归属。
+
+### 字体
+
+本项目**不附带任何字体文件**，界面使用系统字体栈（`ui-sans-serif, system-ui, "PingFang SC"` 等）。
+
+---
+
+## 商标声明
+
+- **GitHub** 名称与 Octocat / GitHub 标志是 **GitHub, Inc.** 的注册商标。
+  本项目仅在「跳转到 GitHub / 表示该链接指向 GitHub」的语境下使用 GitHub 图标，
+  与 GitHub, Inc. **无任何隶属、合作或赞助关系**。
+- 本项目名称中的 “gitstars” 为描述性组合词，本项目**不主张**任何商标权。
+
+---
+
+## 与原项目无关
+
+本项目是 [cfour-hi/gitstars](https://github.com/cfour-hi/gitstars) 的**非官方独立重写版**，
+**不是 fork**，未复用其源代码，也**未获得原作者的授权、认可或赞助**。
+
+原项目未声明任何开源许可证。为避免混淆，本项目**不包含原项目的任何品牌资源**：
+
+- ❌ 原项目 logo 与字标图片（`brand.png`）
+- ❌ 原项目界面截图（`example-*.png`）
+- ❌ 原项目使用的字体文件（`gitstars.woff2`，实为第三方商用字体的子集）
+- ❌ 原项目自有 logo 图形（已替换为本项目自绘的五角星）
+
+以上文件均已从本仓库删除，落地页背景改用纯 CSS 绘制，品牌字体改用系统字体栈。
+
+---
+
+## 运行时的开源依赖
+
+Rust 依赖见 [Cargo.toml](./Cargo.toml) / `Cargo.lock`，均为公开 crates，
+许可证以各自 crate 声明为准（主要是 MIT 与 Apache-2.0）。
+前端不使用任何 npm 包（样式由 Tailwind CSS v4 standalone CLI 生成）。

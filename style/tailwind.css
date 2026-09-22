@@ -1,0 +1,461 @@
+@import "tailwindcss";
+/* markdown 样式放进 base 层：让工具类（如 text-sm）仍然能覆盖它 */
+@import "./github-markdown.css" layer(base);
+
+/* 显式声明需要扫描的源码目录（Tailwind v4 自动内容探测） */
+@source "../src";
+@source "../public";
+
+/* 主题由 <html data-theme="light|dark"> 驱动，而非 `.dark` 类 */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ===== 设计令牌 =====
+ * 这里只放浅色值；深色值在同名变量上覆盖（见下方 [data-theme="dark"]）。
+ * 组件一律通过语义令牌取色，因此换肤不需要改动组件里的工具类。 */
+@theme {
+    /* 品牌色 */
+    --color-primary: #948aec;
+    --color-primary-strong: #6f63d9;
+    --color-secondary: #76d0a3;
+
+    /* 语义色 */
+    --color-canvas: #f3f4f9;
+    --color-surface: #ffffff;
+    --color-surface-2: #f7f8fc;
+    --color-line: #e7e9f2;
+    --color-ink: #1b2430;
+    --color-muted: #6b7688;
+    --color-faint: #99a2b3;
+    --color-danger: #d94b4b;
+    --color-danger-soft: #fdecec;
+
+    /* 侧栏两种主题下都是深色，因此单列一组令牌 */
+    --color-sidebar: #1c242e;
+    --color-sidebar-deep: #131a21;
+    --color-sidebar-ink: #c9d3df;
+    --color-sidebar-muted: #8593a5;
+    --color-sidebar-line: rgba(255, 255, 255, 0.09);
+
+    --font-brand:
+        ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", sans-serif;
+
+    --animate-rise: rise 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    --animate-shimmer: shimmer 1.6s linear infinite;
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes shimmer {
+    from {
+        background-position: 100% 0;
+    }
+    to {
+        background-position: 0 0;
+    }
+}
+
+/* ===== 阴影 =====
+ * 刻意不放进 @theme：Tailwind 会把 @theme 里的 --shadow-* 内联进工具类，
+ * 那样深色主题下就换不掉了。这里改成普通自定义属性 + 组件类。 */
+:root {
+    --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.05), 0 8px 24px -14px rgba(16, 24, 40, 0.16);
+    --shadow-pop: 0 14px 36px -14px rgba(31, 41, 55, 0.3);
+}
+
+/* ===== 深色令牌 =====
+ * 非分层规则，优先级高于 @theme 生成的 `:root`，因此直接覆盖即可。 */
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-primary: #a79ff0;
+    --color-primary-strong: #bdb6f7;
+    --color-secondary: #5fc79b;
+
+    --color-canvas: #0c1016;
+    --color-surface: #141a22;
+    --color-surface-2: #1b222c;
+    --color-line: #252d38;
+    --color-ink: #e6edf3;
+    --color-muted: #8d97a7;
+    --color-faint: #6a7484;
+    --color-danger: #f0666b;
+    --color-danger-soft: rgba(240, 102, 107, 0.14);
+
+    --color-sidebar: #0a0e14;
+    --color-sidebar-deep: #070a0f;
+    --color-sidebar-ink: #b9c4d2;
+    --color-sidebar-muted: #77839a;
+    --color-sidebar-line: rgba(255, 255, 255, 0.07);
+
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.45), 0 8px 24px -14px rgba(0, 0, 0, 0.7);
+    --shadow-pop: 0 16px 40px -16px rgba(0, 0, 0, 0.8);
+}
+
+/* ===== 基础 ===== */
+@layer base {
+    html,
+    body {
+        height: 100%;
+        margin: 0;
+    }
+
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+        background: var(--color-canvas);
+        color: var(--color-ink);
+        font-family:
+            ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC",
+            "Noto Sans SC", "Microsoft YaHei", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        transition:
+            background-color 0.25s ease,
+            color 0.25s ease;
+    }
+
+    svg {
+        display: inline-block;
+    }
+
+    /* 键盘可达性：统一焦点环 */
+    :focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+
+    ::selection {
+        background: color-mix(in oklab, var(--color-primary) 32%, transparent);
+    }
+
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: color-mix(in oklab, var(--color-muted) 42%, transparent) transparent;
+    }
+
+    *::-webkit-scrollbar {
+        width: 0.5rem;
+        height: 0.5rem;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background: color-mix(in oklab, var(--color-muted) 38%, transparent);
+        border-radius: 999px;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: color-mix(in oklab, var(--color-muted) 65%, transparent);
+    }
+}
+
+/* ===== 组件类 =====
+ * 放在 components 层，工具类依然可以覆盖它们。 */
+@layer components {
+    /* 图标：描边/填充各自在 sprite 里声明 fill，这里不再统一 fill */
+    .svg-icon {
+        width: 1em;
+        height: 1em;
+        flex: none;
+        vertical-align: -0.125em;
+    }
+
+    /* 品牌渐变字 */
+    .brand-text {
+        background: linear-gradient(120deg, var(--color-primary), var(--color-secondary));
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .icon-btn {
+        display: inline-grid;
+        place-items: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 999px;
+        color: var(--color-muted);
+        transition:
+            background-color 0.16s ease,
+            color 0.16s ease,
+            transform 0.16s ease;
+    }
+
+    .icon-btn:hover {
+        background: var(--color-surface-2);
+        color: var(--color-primary-strong);
+    }
+
+    .icon-btn:active {
+        transform: scale(0.94);
+    }
+
+    .icon-btn-sm {
+        width: 1.75rem;
+        height: 1.75rem;
+    }
+
+    /* 顶栏文字按钮 */
+    .btn-ghost {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        gap: 0.375rem;
+        height: 2rem;
+        padding-inline: 0.6875rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--color-muted);
+        cursor: pointer;
+        transition:
+            background-color 0.16s ease,
+            color 0.16s ease;
+    }
+
+    .btn-ghost:hover {
+        background: var(--color-surface-2);
+        color: var(--color-ink);
+    }
+
+    .btn-ghost-danger:hover {
+        background: var(--color-danger-soft);
+        color: var(--color-danger);
+    }
+
+    /* 小胶囊（计数 / 语言 / 数值） */
+    .chip {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        gap: 0.25rem;
+        border-radius: 999px;
+        background: var(--color-surface-2);
+        padding: 0.125rem 0.5rem;
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--color-muted);
+    }
+
+    .shadow-soft {
+        box-shadow: var(--shadow-soft);
+    }
+
+    .shadow-pop {
+        box-shadow: var(--shadow-pop);
+    }
+
+    .skeleton {
+        background: linear-gradient(
+            90deg,
+            var(--color-surface-2) 25%,
+            var(--color-line) 37%,
+            var(--color-surface-2) 63%
+        );
+        background-size: 400% 100%;
+        animation: var(--animate-shimmer);
+    }
+
+    /* 侧栏（两种主题下都是深色） */
+    .sidebar {
+        scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+    }
+
+    .sidebar *::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.16);
+    }
+
+    .sidebar *::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.32);
+    }
+
+    .seg-tab {
+        color: var(--color-sidebar-muted);
+        transition:
+            background-color 0.16s ease,
+            color 0.16s ease,
+            box-shadow 0.16s ease;
+    }
+
+    .seg-tab:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.07);
+    }
+
+    .seg-tab.selected {
+        background: linear-gradient(120deg, var(--color-primary), #8878e6);
+        color: #fff;
+        box-shadow: 0 8px 18px -10px rgba(148, 138, 236, 0.95);
+    }
+
+    /* 侧栏 tag 行：固定 36px，必须与虚拟滚动 item_height 一致 */
+    .tag-item {
+        height: 2.25rem;
+        color: var(--color-sidebar-ink);
+        transition:
+            background-color 0.16s ease,
+            color 0.16s ease;
+    }
+
+    .tag-item:hover {
+        background: rgba(255, 255, 255, 0.07);
+    }
+
+    .tag-item.selected {
+        background: linear-gradient(90deg, rgba(148, 138, 236, 0.34), rgba(118, 208, 163, 0.14));
+        color: #fff;
+        box-shadow: inset 2px 0 0 var(--color-primary);
+    }
+
+    /* 仓库卡片 */
+    .repo-item {
+        transition:
+            background-color 0.16s ease,
+            box-shadow 0.16s ease;
+    }
+
+    .repo-item:hover {
+        background: var(--color-surface-2);
+    }
+
+    .repo-item.selected {
+        background: linear-gradient(90deg, rgba(148, 138, 236, 0.14), rgba(118, 208, 163, 0.05));
+        box-shadow: inset 3px 0 0 var(--color-primary);
+    }
+
+    [data-theme="dark"] .repo-item.selected {
+        background: linear-gradient(90deg, rgba(148, 138, 236, 0.22), rgba(118, 208, 163, 0.06));
+    }
+
+    /* topic 胶囊 */
+    .tag-topic {
+        cursor: pointer;
+        transition:
+            background-color 0.16s ease,
+            border-color 0.16s ease,
+            color 0.16s ease;
+    }
+
+    .tag-topic:hover {
+        border-color: color-mix(in oklab, var(--color-primary) 55%, transparent);
+        color: var(--color-primary-strong);
+    }
+
+    .tag-topic.selected-tag {
+        border-color: transparent;
+        background: var(--color-primary);
+        color: #fff;
+    }
+
+    ul.disabled {
+        opacity: 0.45;
+        pointer-events: none;
+    }
+}
+
+/* ===== 未登录落地页 ===== */
+.unauth {
+    background:
+        radial-gradient(60rem 60rem at 15% 20%, rgba(148, 138, 236, 0.55), transparent 60%),
+        radial-gradient(50rem 50rem at 85% 80%, rgba(118, 208, 163, 0.5), transparent 62%),
+        linear-gradient(135deg, #7f74e8 0%, #948aec 40%, #76d0a3 100%);
+}
+
+[data-theme="dark"] .unauth {
+    background:
+        radial-gradient(55rem 55rem at 12% 18%, rgba(124, 111, 240, 0.42), transparent 62%),
+        radial-gradient(48rem 48rem at 88% 82%, rgba(63, 179, 131, 0.3), transparent 64%),
+        linear-gradient(150deg, #0a0e17 0%, #141a2b 48%, #0c1a17 100%);
+}
+
+/* 纯 CSS 点阵背景（不依赖任何图片资源） */
+.unauth .wrapper {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(circle at 50% 45%, #000 20%, transparent 72%);
+    -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 20%, transparent 72%);
+}
+
+[data-theme="dark"] .unauth .wrapper {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+}
+
+/* ===== README 深色覆盖 =====
+ * 引入的 github-markdown.css 只有浅色值，这里补齐深色。
+ * 非分层规则，优先级高于 base 层里的同名规则。 */
+[data-theme="dark"] .markdown-body {
+    color-scheme: dark;
+    color: var(--color-ink);
+    background-color: transparent;
+}
+
+[data-theme="dark"] .markdown-body h1,
+[data-theme="dark"] .markdown-body h2 {
+    border-bottom-color: #3d444d;
+}
+
+[data-theme="dark"] .markdown-body h6 {
+    color: var(--color-muted);
+}
+
+[data-theme="dark"] .markdown-body a {
+    color: #6cb6ff;
+}
+
+[data-theme="dark"] .markdown-body hr {
+    background-color: #3d444d;
+    border-bottom-color: #3d444d;
+}
+
+[data-theme="dark"] .markdown-body code,
+[data-theme="dark"] .markdown-body tt {
+    background-color: rgba(110, 118, 129, 0.4);
+}
+
+[data-theme="dark"] .markdown-body pre {
+    color: var(--color-ink);
+    background-color: #0d1117;
+}
+
+[data-theme="dark"] .markdown-body blockquote {
+    color: var(--color-muted);
+    border-left-color: #3d444d;
+}
+
+[data-theme="dark"] .markdown-body table th,
+[data-theme="dark"] .markdown-body table td {
+    border-color: #3d444d;
+}
+
+[data-theme="dark"] .markdown-body table tr {
+    background-color: transparent;
+    border-top-color: #3d444d;
+}
+
+[data-theme="dark"] .markdown-body table tr:nth-child(2n) {
+    background-color: var(--color-surface-2);
+}
+
+[data-theme="dark"] .markdown-body img {
+    background-color: transparent;
+}
+
+[data-theme="dark"] .markdown-body .markdown-alert {
+    border-left-color: #3d444d;
+}

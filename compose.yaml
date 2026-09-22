@@ -1,0 +1,38 @@
+# Gitstars 部署（HTTP）
+#
+# 镜像由 scripts/build-image.sh 在本机编译并构建，本文件只负责运行。
+#
+#   scripts/build-image.sh --push          # 构建（可选推送）
+#   podman-compose up -d                   # 启动
+#   podman-compose -f compose.yaml -f compose.tls.yaml up -d   # 启用 HTTPS
+#
+# .env 中至少需要：GITSTARS_CLIENT_ID、GITHUB_CLIENT_SECRET，
+# 以及（推送过镜像的话）GITSTARS_IMAGE_REPO / GITSTARS_IMAGE_TAG。
+services:
+  gitstars:
+    image: ${GITSTARS_IMAGE_REPO:-gitstars}:${GITSTARS_IMAGE_TAG:-0.0.1}
+    container_name: gitstars
+    restart: unless-stopped
+    # 镜像 ENTRYPOINT 已是 tini；这里不要再开 compose 的 init，
+    # 否则会叠两层 init，且 tini 不再作为 PID 1（收不到信号、无法回收僵尸进程）
+    # 根文件系统只读；唯一的写入点是 /app/data 卷
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    environment:
+      GITSTARS_CLIENT_ID: ${GITSTARS_CLIENT_ID:?请在 .env 中设置 GITSTARS_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:?请在 .env 中设置 GITHUB_CLIENT_SECRET}
+      GITSTARS_DATA_DIR: /app/data
+      GITSTARS_STARS_TTL_SECS: ${GITSTARS_STARS_TTL_SECS:-900}
+      GITSTARS_RANKING_TTL_SECS: ${GITSTARS_RANKING_TTL_SECS:-86400}
+      RUST_LOG: ${RUST_LOG:-info}
+    ports:
+      - "${GITSTARS_PORT:-8080}:8080"
+    volumes:
+      # Stars / 排行榜 JSON 快照
+      - gitstars-data:/app/data
+
+volumes:
+  gitstars-data:

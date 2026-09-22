@@ -1,0 +1,19 @@
+# Gitstars 部署（HTTPS 覆盖文件）
+#
+# 与 compose.yaml 组合使用：
+#   ./scripts/setup-local-https.sh          # 用 mkcert 生成 .certs/
+#   podman-compose -f compose.yaml -f compose.tls.yaml up -d
+#
+# 注意：compose 的 volumes 列表是**整体替换**而非合并，
+# 因此这里必须把 compose.yaml 里的数据卷一并重复声明。
+#
+# 证书目录以只读方式挂入 /app/cert；容器以 uid 10001 运行，
+# 证书文件需要对其他用户可读（setup-local-https.sh 已 chmod 0644）。
+services:
+  gitstars:
+    environment:
+      TLS_CERT_FILE: /app/cert/localhost.pem
+      TLS_KEY_FILE: /app/cert/localhost-key.pem
+    volumes:
+      - gitstars-data:/app/data
+      - ${GITSTARS_CERT_DIR:-./.certs}:/app/cert:ro
